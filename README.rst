@@ -37,10 +37,14 @@ or small/semi-professional AWS account.
 Solutions that are better or bigger than Nightlatch
 +++++++++++++++++++++++++++++++++++++++++++++++++++
 
-1. Not needing to SSH into your servers at all by using `Immutable Infrastructure`_ and `Log Aggregation`_.
+1. Not needing to SSH into your servers at all by using `Immutable Infrastructure`_ and `Centralized Log Aggregation`_.
 2. Having one or more dedicated public I.P. addresses used by workstations SSHing into your Bastion host.
 3. An IPsec VPN connection
 4. AWS Direct Connect (optionally with an IPsec VPN connection fallback)
+
+.. _Immutable Infrastructure: https://martinfowler.com/bliki/ImmutableServer.html
+
+.. _Centralized Log Aggregation: http://jasonwilder.com/blog/2012/01/03/centralized-logging/
 
 Attribution
 ===========
