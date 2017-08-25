@@ -1,9 +1,17 @@
-|icon| Latchbolt
-----------------
+|icon| Nightlatch
+-----------------
 
-Latchbolt is both a Serverless_ application and command-line utility for temporarily opening
-TCP port 22 from a specific I.P. address to a `Bastion host`_ running on `Amazon Web Services`_ (AWS).
-It's akin to `Port knocking`_ using AWS APIs.
+Opening TCP port 22 to the complete public internet (0.0.0.0/0) is bad idea no matter how hardened
+your server is and `AWS Trusted Advisor` will tell you as much.
+Nightlatch is tool which improves the security of accessing `Amazon Web Services`_ EC2 instances
+from various and changing public I.P. addresses.  It assumes an already existing `Bastion host`_
+with a public I.P. address running on EC2.
+
+Nightlatch is composed of a Serverless_ application (along with a CloudFormation template you can
+use to deploy it within your AWS account) and command-line utility to request temporarily opening
+TCP port 22 from a source workstation (where the CLI is run) to the `Bastion host`_.
+It's akin to `Port knocking`_ using AWS APIs.  However, Nightlatch does not prevent you from also using
+Port knocking.  Security is a `game of layers`_.
 
 .. |icon| image:: assets/key.png
           :width: 1em
@@ -16,6 +24,10 @@ It's akin to `Port knocking`_ using AWS APIs.
 
 .. _Port knocking: https://en.wikipedia.org/wiki/Port_knocking
 
+.. _game of layers: https://en.wikipedia.org/wiki/Layered_security
+
+.. _AWS Trusted Advisor: https://aws.amazon.com/premiumsupport/trustedadvisor/
+
 Who would want to use this?
 ===========================
 
@@ -27,7 +39,7 @@ AWS Direct Connect or both.
 Attribution
 ===========
 
-Icons made by Freepik_ from www.flaticon.com_ are licensed by `CC 3.0 BY`_
+Icon made by Freepik_ from www.flaticon.com_ is licensed by `CC 3.0 BY`_
 
 .. _Freepik: http://www.freepik.com
 
