@@ -33,8 +33,14 @@ Who would want to use this?
 
 Single digit-sized groups of people managing EC2 instances using a Bastion host in a personal
 or small/semi-professional AWS account.
-Companies of any significant size will be better off configuring an IPsec VPN connection, using
-AWS Direct Connect or both.
+
+Solutions that are better or bigger than Nightlatch
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+1. Not needing to SSH into your servers at all by using `Immutable Infrastructure`_ and `Log Aggregation`_.
+2. Having one or more dedicated public I.P. addresses used by workstations SSHing into your Bastion host.
+3. An IPsec VPN connection
+4. AWS Direct Connect (optionally with an IPsec VPN connection fallback)
 
 Attribution
 ===========
