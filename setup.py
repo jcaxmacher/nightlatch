@@ -4,7 +4,7 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
-setup(name='crowbar',
+setup(name='latchbolt',
       version='0.1',
       description='A more secure way to provide access to bastion hosts on AWS',
       long_description=readme(),
@@ -15,11 +15,11 @@ setup(name='crowbar',
         'Topic :: Text Processing :: Linguistic',
       ],
       keywords='AWS',
-      url='http://github.com/jcaxmacher/crowbar',
+      url='http://github.com/jcaxmacher/latchbolt',
       author='J Axmacher',
       author_email='jeremy@obsoleter.com',
       license='MIT',
-      packages=['crowbar_cli'],
+      packages=['latchbolt_cli'],
       install_requires=[],
       include_package_data=True,
       zip_safe=False)
