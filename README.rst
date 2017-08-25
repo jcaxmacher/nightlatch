@@ -7,8 +7,8 @@ Nightlatch is tool which improves the security of accessing `Amazon Web Services
 from various and changing public I.P. addresses.  It assumes an already existing `Bastion host`_
 with a public I.P. address running on EC2.
 
-Nightlatch is composed of a Serverless_ application (along with a CloudFormation template you can
-use to deploy it within your AWS account) and command-line utility to request temporarily opening
+Nightlatch is composed of a Serverless_ application (paired with a CloudFormation template you can
+use to deploy the application within your AWS account) and command-line utility to request temporarily opening
 TCP port 22 from a source workstation (where the CLI is run) to the `Bastion host`_.
 It's akin to `Port knocking`_ using AWS APIs.  However, Nightlatch does not prevent you from also using
 Port knocking.  Security is a `game of layers`_.
@@ -31,7 +31,7 @@ Port knocking.  Security is a `game of layers`_.
 Who would want to use this?
 ===========================
 
-Single digit-sized groups of people managing EC2 instances using a Bastion host in a personal
+Single-digit-sized groups of people managing EC2 instances using a Bastion host in a personal
 or small/semi-professional AWS account.
 
 Solutions that are better or bigger than Nightlatch
