@@ -10,7 +10,13 @@ db = boto3.resource('dynamodb')
 table = db.Table('nightlatch')
 
 
-def handler(event, *args, **kwargs):
+def remove(event, *args, **kwargs):
+    """Handle periodic Cloudwatch events to remove access to I.P. addresses
+    after specified time."""
+    pass
+
+
+def add(event, *args, **kwargs):
     """Handle requests to add the source I.P. address to bastion-host security
     group in AWS.
 
