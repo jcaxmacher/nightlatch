@@ -2,78 +2,113 @@ import sys
 import time
 import json
 import logging
+from collections import namedtuple
 
 import boto3
+from boto3.session import Session
 from boto3.dynamodb.conditions import Key
 from botocore import exceptions
 
 PORT = 22
 OPEN_ACCESS_DURATION = 60 * 5 # five minutes
+GROUP_FILTER = [{'Name': 'tag:crowbar-group', 'Values': ['true']}]
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-client = boto3.client('ec2')
-db = boto3.resource('dynamodb')
+session = Session(profile_name='personal')
+client = session.client('ec2')
+db = session.resource('dynamodb')
 table = db.Table('nightlatch')
 
 
-def revoke(event, *args, **kwargs):
-    """Handle periodic Cloudwatch events to remove access to I.P. addresses
-    after specified time."""
-    cutoff_time = int(time.time()) - OPEN_ACCESS_DURATION
+class BaseError(Exception):
+    pass
+
+
+class DbQueryError(BaseError):
+    pass
+
+
+Permission = namedtuple('Permission', ['group_id', 'from_port', 'to_port', 'protocol', 'cidr_ip'])
+
+
+def get_effective_permissions(group_filter=GROUP_FILTER):
     groups = client.describe_security_groups(
         Filters=[{'Name': 'tag:crowbar-group', 'Values': ['true']}]
     )
-    logger.debug('Security group response %s', groups)
+    permissions = []
     for group in groups['SecurityGroups']:
-        group_id = group['GroupId']
-        logger.debug('Examining group %s', group_id)
         for permission in group['IpPermissions']:
-            if permission['FromPort'] == PORT and permission['ToPort'] == PORT:
-                logger.debug('Examining permission %s', permission)
-                for range in permission['IpRanges']:
-                    ip = range['CidrIp'].split('/32')[0]
-                    logger.debug('Querying db table for ip %s', ip)
-                    response = table.get_item(Key={'ip_address': ip})
-                    logger.debug('Response %s', response)
-                    if response.get('Item'):
-                        created_at = int(response['Item']['created_at'])
-                        if cutoff_time > created_at:
-                            logger.debug('Access expired for range %s', range['CidrIp'])
-                            client.revoke_security_group_ingress(
-                                CidrIp=range['CidrIp'],
-                                FromPort=PORT,
-                                ToPort=PORT,
-                                IpProtocol='tcp',
-                                GroupId=group_id
-                            )
-                            table.delete_item(Key={'ip_address': ip})
-                        else:
-                            logger.debug('Permission for ip %s has not expired', ip)
-                    elif response['ResponseMetadata']['HTTPStatusCode'] != 200:
-                        raise Exception('Could not query DynamoDB table for IP')
-                    else:
-                        logger.debug('IP address %s does not exist in table. Removing.', ip)
-                        client.revoke_security_group_ingress(
-                            CidrIp=range['CidrIp'],
-                            FromPort=PORT,
-                            ToPort=PORT,
-                            IpProtocol='tcp',
-                            GroupId=group_id
-                        )
-            else:
-                logger.debug('Found an IP permission for an unknown port. Removing.')
-                for range in permission['IpRanges']:
-                    logger.debug('Revoking %s', range['CidrIp'])
-                    client.revoke_security_group_ingress(
-                        CidrIp=range['CidrIp'],
-                        FromPort=permission['FromPort'],
-                        ToPort=permission['ToPort'],
-                        IpProtocol=permission['IpProtocol'],
-                        GroupId=group_id
-                    )
-    return {"statusCode": 200, "body": json.dumps({'message': 'success'})}
+            for range in permission['IpRanges']:
+                permissions.append(Permission(
+                    group['GroupId'],
+                    permission['FromPort'],
+                    permission['ToPort'],
+                    permission['IpProtocol'],
+                    range['CidrIp']
+                ))
+    return set(permissions)
+
+
+def get_authorizations():
+    response = table.scan()
+    if response.get('Items'):
+        return set(response['Items'])
+    elif response.get('ResponseMetadata', {}).get('HTTPStatusCode') == 200:
+        return set()
+    else:
+        raise DbQueryError('Error occurred scanning table')
+
+
+def is_valid(permission, valid_set, valid_port=PORT):
+    ip_address, bits = permission.cidr_ip.split('/')
+    return (
+        permission.from_port == valid_port
+        and permission.to_port == valid_port
+        and permission.protocol == 'tcp'
+        and bits == '32'
+        and ip_address in valid_set
+    )
+
+
+def revoke_permissions(permissions):
+    for permission in permissions:
+        client.revoke_security_group_ingress(
+            CidrIp=permission.cidr_ip,
+            FromPort=permission.from_port,
+            ToPort=permission.to_port,
+            IpProtocol=permission.protocol,
+            GroupId=permission.group_id
+        )
+
+
+def delete_authorizations(authorizations):
+    for ip_address in authorizations:
+        table.delete_item(Key={'ip_address': ip_address})
+
+
+def revoke(*args, **kwargs):
+    """Handle periodic Cloudwatch events to remove access to I.P. addresses
+    after specified time."""
+    cutoff_time = int(time.time()) - OPEN_ACCESS_DURATION
+    # Calculate authorization validations
+    authorizations = get_authorizations()
+    valid_authorizations = set(
+        auth['ip_address'] for auth in authorizations
+        if cutoff_time > auth['created_at']
+    )
+    invalid_authorizations = authorizations - valid_authorizations
+    # Calculate permission validations
+    effective_permissions = get_effective_permissions()
+    valid_permissions = set(
+        permission for permission in effective_permissions
+        if is_valid(permission, valid_set=valid_authorizations)
+    )
+    invalid_permissions = effective_permissions - valid_permissions
+    # Enact permission revocations and authorization deletions
+    revoke_permissions(invalid_permissions)
+    delete_authorizations(invalid_authorizations)
 
 
 def authorize(event, *args, **kwargs):
