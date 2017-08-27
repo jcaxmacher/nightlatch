@@ -34,9 +34,7 @@ Permission = namedtuple('Permission', ['group_id', 'from_port', 'to_port', 'prot
 
 
 def get_effective_permissions(group_filter=GROUP_FILTER):
-    groups = client.describe_security_groups(
-        Filters=[{'Name': 'tag:crowbar-group', 'Values': ['true']}]
-    )
+    groups = client.describe_security_groups(Filters=group_filter)
     permissions = []
     for group in groups['SecurityGroups']:
         for permission in group['IpPermissions']:
@@ -127,26 +125,24 @@ def authorize(event, *args, **kwargs):
             'created_at': now
         }
     )
-    groups = client.describe_security_groups(
-        Filters=[{'Name': 'tag:crowbar-group', 'Values': ['true']}]
-    )
+    groups = client.describe_security_groups(Filters=GROUP_FILTER)
     for group in groups['SecurityGroups']:
         group_id = group['GroupId']
-        try:
             for port in PORTS:
-                client.authorize_security_group_ingress(
-                    CidrIp='{}/32'.format(ip_address),
-                    FromPort=port,
-                    ToPort=port,
-                    IpProtocol='tcp',
-                    GroupId=group_id
-                )
-        except exceptions.ClientError as exc:
-            code = exc.response['Error']['Code']
-            if code == 'InvalidPermission.Duplicate':
-                continue
-            else:
-                raise
+                try:
+                    client.authorize_security_group_ingress(
+                        CidrIp='{}/32'.format(ip_address),
+                        FromPort=port,
+                        ToPort=port,
+                        IpProtocol='tcp',
+                        GroupId=group_id
+                    )
+                except exceptions.ClientError as exc:
+                    code = exc.response['Error']['Code']
+                    if code == 'InvalidPermission.Duplicate':
+                        continue
+                    else:
+                        raise
     response = {
         "source_ip": ip_address,
         "message": "Successfully added I.P. address"
