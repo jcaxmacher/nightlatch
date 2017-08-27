@@ -9,7 +9,7 @@ from boto3.session import Session
 from boto3.dynamodb.conditions import Key
 from botocore import exceptions
 
-PORT = 22
+PORTS = [22]
 OPEN_ACCESS_DURATION = 60 * 5 # five minutes
 GROUP_FILTER = [{'Name': 'tag:crowbar-group', 'Values': ['true']}]
 
@@ -64,8 +64,8 @@ def get_authorizations():
 def is_invalid(permission, valid_set, valid_port=PORT):
     ip_address, bits = permission.cidr_ip.split('/')
     return (
-        permission.from_port != valid_port
-        or permission.to_port != valid_port
+        permission.from_port != permission.to_port
+        or permission.from_port not in valid_ports
         or permission.protocol != 'tcp'
         or bits != '32'
         or ip_address not in valid_set
@@ -134,13 +134,14 @@ def authorize(event, *args, **kwargs):
     for group in groups['SecurityGroups']:
         group_id = group['GroupId']
         try:
-            client.authorize_security_group_ingress(
-                CidrIp='{}/32'.format(ip_address),
-                FromPort=PORT,
-                ToPort=PORT,
-                IpProtocol='tcp',
-                GroupId=group_id
-            )
+            for port in PORTS:
+                client.authorize_security_group_ingress(
+                    CidrIp='{}/32'.format(ip_address),
+                    FromPort=port,
+                    ToPort=port,
+                    IpProtocol='tcp',
+                    GroupId=group_id
+                )
         except exceptions.ClientError as exc:
             code = exc.response['Error']['Code']
             if code == 'InvalidPermission.Duplicate':
