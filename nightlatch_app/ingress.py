@@ -61,14 +61,14 @@ def get_authorizations():
         raise DbQueryError('Error occurred scanning table')
 
 
-def is_invalid(permission, valid_set, valid_port=PORT):
+def is_invalid(permission, invalid_set, valid_ports=PORTS):
     ip_address, bits = permission.cidr_ip.split('/')
     return (
         permission.from_port != permission.to_port
         or permission.from_port not in valid_ports
         or permission.protocol != 'tcp'
         or bits != '32'
-        or ip_address not in valid_set
+        or ip_address in invalid_set
     )
 
 
@@ -94,17 +94,16 @@ def revoke(*args, **kwargs):
     cutoff_time = int(time.time()) - OPEN_ACCESS_DURATION
     # Calculate authorization validations
     authorizations = get_authorizations()
-    valid_authorizations = set(
+    invalid_authorizations = [
         auth['ip_address'] for auth in authorizations
-        if cutoff_time > auth['created_at']
-    )
-    invalid_authorizations = authorizations - valid_authorizations
+        if cutoff_time <= auth['created_at']
+    ]
     # Calculate invalid permissions
     effective_permissions = get_effective_permissions()
-    invalid_permissions = set(
+    invalid_permissions = [
         permission for permission in effective_permissions
-        if is_invalid(permission, valid_set=valid_authorizations)
-    )
+        if is_invalid(permission, invalid_set=invalid_authorizations)
+    ]
     # Enact permission revocations and authorization deletions
     revoke_permissions(invalid_permissions)
     delete_authorizations(invalid_authorizations)
