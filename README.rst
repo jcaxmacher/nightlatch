@@ -46,6 +46,21 @@ Solutions that are better or bigger than Nightlatch
 
 .. _Centralized Log Aggregation: http://jasonwilder.com/blog/2012/01/03/centralized-logging/
 
+Limitations
+===========
+
+At any given moment, a VPC security group can, by default, have a maximum of 50 rules.  If you request limit
+increases with AWS support, you can push that number to 250.  This means that the maximum number of
+I.P. addresses that Nightlatch could possibly grant access to at any given moment is 250 (assuming you
+are only opening one TCP port per IP address).  That is way too many addresses.
+
+Additionally, the data model used for bookkeeping of the ingress authorizations is stored in DynamoDB
+and is not optimized for a large amount of data.  Theoretically, it could store ~6,000 authorizations,
+but you would be paying excessive RCUs/WCUs because it's all stored in one item.
+
+As stated above, if you have more than nine people using Nightlatch to access your EC2 instances, you would
+probably be better served by a different solution.
+
 Attribution
 ===========
 
