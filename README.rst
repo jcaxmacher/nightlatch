@@ -75,7 +75,7 @@ TODO
 * [X] Function for adding ingress rule
 * [X] Function for removing expired ingress rules
 * [X] Configurable security group tag, TCP port(s) for ingress rule(s), ingress rule ttl
-* [ ] CloudFormation template for deployment
+* ``[  ]`` CloudFormation template for deployment
 
 Attribution
 ===========
