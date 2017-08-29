@@ -71,11 +71,11 @@ place are allowed to remain.
 TODO
 ====
 
-* [X] DynamoDB bookkeeping table schema design
-* [X] Function for adding ingress rule
-* [X] Function for removing expired ingress rules
-* [X] Configurable security group tag, TCP port(s) for ingress rule(s), ingress rule ttl
-* ``[  ]`` CloudFormation template for deployment
+* ``[X]`` DynamoDB bookkeeping table schema design
+* ``[X]`` Function for adding ingress rule
+* ``[X]`` Function for removing expired ingress rules
+* ``[X]`` Configurable security group tag, TCP port(s) for ingress rule(s), ingress rule ttl
+* ``[ ]`` CloudFormation template for deployment
 
 Attribution
 ===========
