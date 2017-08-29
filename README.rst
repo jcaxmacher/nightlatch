@@ -61,6 +61,13 @@ but you would be paying excessive RCUs/WCUs because it's all stored in one item.
 As stated above, if you have more than nine people using Nightlatch to access your EC2 instances, you would
 probably be better served by a different solution.
 
+Nightlatch only supports TCP connections because those _`connections are tracked` by AWS unlike UDP traffic.
+Because the opening and closing of inbound traffic on the desired TCP port(s) is performed through
+VPC security group(s), the ingress rule can be removed while any connections created while the rule was in
+place are allowed to remain.
+
+.. _`connections are tracked`: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html#security-group-connection-tracking
+
 Attribution
 ===========
 
