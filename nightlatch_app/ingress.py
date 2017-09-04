@@ -12,15 +12,16 @@ from botocore import exceptions
 
 PORTS = [int(p) for p in os.environ.get('PORTS', '22').split(',')]
 OPEN_ACCESS_DURATION = int(os.environ.get('DURATION', 60 * 5))
-GROUP_TAG = os.environ.get('GROUP_TAG', 'nightlatch-group')
+GROUP_NAME = os.environ['GROUP_NAME']
+TABLE_NAME = os.environ['TABLE_NAME']
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-session = Session(profile_name='personal')
+session = Session()
 client = session.client('ec2')
 db = session.resource('dynamodb')
-table = db.Table('nightlatch')
+table = db.Table(TABLE_NAME)
 
 
 class BaseError(Exception):
@@ -80,7 +81,6 @@ def get_latch_duration():
             },
         )
         duration = OPEN_ACCESS_DURATION
-
     else:
         duration = int(item.get('v'))
     return duration
@@ -88,23 +88,22 @@ def get_latch_duration():
 
 @boto_retry('*')
 def get_group_filter():
-    response = table.get_item(Key={'k': 'group_tag'})
+    response = table.get_item(Key={'k': 'group_name'})
     item = response.get('Item', {})
     if not item.get('v'):
         table.update_item(
             Key={
-                'k': 'group_tag'
+                'k': 'group_name'
             },
             UpdateExpression='SET v = :v',
             ExpressionAttributeValues={
-                ':v': GROUP_TAG
+                ':v': GROUP_NAME
             },
         )
-        filter = [{'Name': 'tag:{}'.format(GROUP_TAG), 'Values': ['true']}]
-
+        filter = [{'Name': 'tag:Name', 'Values': [GROUP_NAME]}]
     else:
-        group_tag = item.get('v')
-        filter = [{'Name': 'tag:{}'.format(group_tag), 'Values': ['true']}]
+        group_name = item.get('v')
+        filter = [{'Name': 'tag:Name', 'Values': [group_name]}]
     return filter
 
 
@@ -206,22 +205,23 @@ def add_authorization(ip_address):
 
 @boto_retry('ConditionalCheckFailedException')
 def delete_authorizations(ip_addresses):
-    authorizations, seq = get_authorizations()
-    for ip_address in ip_addresses:
-        if ip_address in authorizations:
-            del authorizations[ip_address]
-    table.update_item(
-        Key={
-            'k': 'ip_addresses'
-        },
-        UpdateExpression='SET v = :v, s = :s',
-        ExpressionAttributeValues={
-            ':v': authorizations,
-            ':s': seq + 1,
-            ':o': seq
-        },
-        ConditionExpression='NOT attribute_exists(k) OR s = :o'
-    )
+    if ip_addresses:
+        authorizations, seq = get_authorizations()
+        for ip_address in ip_addresses:
+            if ip_address in authorizations:
+                del authorizations[ip_address]
+        table.update_item(
+            Key={
+                'k': 'ip_addresses'
+            },
+            UpdateExpression='SET v = :v, s = :s',
+            ExpressionAttributeValues={
+                ':v': authorizations,
+                ':s': seq + 1,
+                ':o': seq
+            },
+            ConditionExpression='NOT attribute_exists(k) OR s = :o'
+        )
 
 
 @boto_retry('*')

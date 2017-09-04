@@ -68,15 +68,6 @@ place are allowed to remain.
 
 .. _`connections are tracked`: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html#security-group-connection-tracking
 
-TODO
-====
-
-* ``[X]`` DynamoDB bookkeeping table schema design
-* ``[X]`` Function for adding ingress rule
-* ``[X]`` Function for removing expired ingress rules
-* ``[X]`` Configurable security group tag, TCP port(s) for ingress rule(s), ingress rule ttl
-* ``[ ]`` CloudFormation template for deployment
-
 Attribution
 ===========
 

@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: 2010-09-09
+Outputs:
+  BucketName:
+    Value: !Ref NightlatchBucket
+Resources:
+  NightlatchBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      AccessControl: PublicRead
+      MetricsConfigurations:
+        - Id: EntireBucket
