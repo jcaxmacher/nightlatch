@@ -44,6 +44,10 @@ Resources:
       Tags:
         - Key: Name
           Value: !Ref SecurityGroupName
+        - Key: duration_in_minutes
+          Value: !Ref Duration
+        - Key: valid_ports
+          Value: !Ref Ports
       VpcId: !Ref Vpc
   NightlatchUserGroup:
     Type: 'AWS::IAM::Group'
@@ -82,15 +86,6 @@ Resources:
                     'ec2:ResourceTag/Name': !Ref SecurityGroupName
                 Effect: Allow
                 Resource: '*'
-              - Action:
-                  - 'dynamodb:GetItem'
-                  - 'dynamodb:DeleteItem'
-                  - 'dynamodb:PutItem'
-                  - 'dynamodb:UpdateItem'
-                Resource: !GetAtt 
-                  - DBTable
-                  - Arn
-                Effect: Allow
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -185,7 +180,7 @@ Resources:
     Type: 'AWS::Events::Rule'
     Properties:
       Description: Periodic trigger of ingress revocation
-      ScheduleExpression: !Sub "rate(1 minutes)"
+      ScheduleExpression: "rate(1 minute)"
       State: "ENABLED"
       Targets:
         - Arn: !GetAtt
@@ -210,11 +205,8 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          TABLE_NAME: !Ref DBTable
           GROUP_NAME: !Ref SecurityGroupName
-          PORTS: !Ref Ports
-          DURATION: !Ref Duration
-      Handler: ingress.revoke
+      Handler: app.revoke_handler
       Role: !GetAtt 
         - APIHandlerRole
         - Arn
@@ -229,25 +221,10 @@ Resources:
       MemorySize: 128
       Environment:
         Variables:
-          TABLE_NAME: !Ref DBTable
           GROUP_NAME: !Ref SecurityGroupName
-          PORTS: !Ref Ports
-          DURATION: !Ref Duration
-      Handler: ingress.authorize
+      Handler: app.add_handler
       Role: !GetAtt 
         - APIHandlerRole
         - Arn
       Timeout: 30
       Runtime: python3.6
-  DBTable:
-    Type: 'AWS::DynamoDB::Table'
-    Properties:
-      ProvisionedThroughput:
-        WriteCapacityUnits: 5
-        ReadCapacityUnits: 5
-      AttributeDefinitions:
-        - AttributeName: k
-          AttributeType: S
-      KeySchema:
-        - KeyType: HASH
-          AttributeName: k

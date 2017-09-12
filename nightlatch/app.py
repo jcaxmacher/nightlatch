@@ -15,7 +15,7 @@ FILTER = [{'Name': 'tag:Name', 'Values': [GROUP_NAME]}]
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-session = Session(profile_name='personal')
+session = Session()
 client = session.client('ec2')
 
 
@@ -163,7 +163,7 @@ def get_groups(filters=FILTER):
     for group in groups['SecurityGroups']:
         tags = process_tags(group['Tags'])
         yield SecurityGroup(
-            group['GroupId'], tags['valid_ports'], tags['duration_in_seconds']
+            group['GroupId'], tags['valid_ports'], tags['duration']
         )
 
 
@@ -200,7 +200,7 @@ def process_tags(tags):
         tags['valid_ports'] = tuple(sorted([int(port) for port in valid_ports]))
     else:
         tags['valid_ports'] = tuple()
-    tags['duration_in_seconds'] = int(tags.get('duration_in_seconds', 0))
+    tags['duration'] = int(tags.get('duration_in_minutes', 0)) * 60
     return tags
 
 
