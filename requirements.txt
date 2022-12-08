@@ -5,16 +5,36 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 boto3==1.4.5
-botocore==1.7.5           # via boto3, s3transfer
-certifi==2017.7.27.1      # via requests
-chardet==3.0.4            # via requests
+    # via
+    #   -r requirements.in
+    #   requests-aws-sign
+botocore==1.5.95
+    # via
+    #   boto3
+    #   s3transfer
+certifi==2022.12.7
+    # via requests
+chardet==3.0.4
+    # via requests
 docopt==0.6.2
-docutils==0.14            # via botocore
-idna==2.6                 # via requests
-jmespath==0.9.3           # via boto3, botocore
-python-dateutil==2.6.1    # via botocore
+    # via -r requirements.in
+docutils==0.14
+    # via botocore
+idna==2.6
+    # via requests
+jmespath==0.9.3
+    # via
+    #   boto3
+    #   botocore
+python-dateutil==2.6.1
+    # via botocore
+requests==2.18.4
+    # via requests-aws-sign
 requests-aws-sign==0.1.4
-requests==2.18.4          # via requests-aws-sign
-s3transfer==0.1.10        # via boto3
-six==1.10.0               # via python-dateutil
-urllib3==1.22             # via requests
+    # via -r requirements.in
+s3transfer==0.1.10
+    # via boto3
+six==1.10.0
+    # via python-dateutil
+urllib3==1.22
+    # via requests
